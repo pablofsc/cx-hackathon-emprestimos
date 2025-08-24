@@ -22,7 +22,6 @@ type Product = {
 
 const PaginaProdutos = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [viewModalVisible, setViewModalVisible] = useState(false);
   const [productName, setProductName] = useState('');
   const [annualInterestRate, setAnnualInterestRate] = useState('');
   const [maxMonths, setMaxMonths] = useState('');
@@ -30,6 +29,21 @@ const PaginaProdutos = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const isSaveButtonDisabled = !productName || !annualInterestRate || !maxMonths;
+
+  const handleEditProduct = (product: Product) => {
+    setProductName(product.name);
+    setAnnualInterestRate(product.annualInterestRate.toString());
+    setMaxMonths(product.maxMonths.toString());
+    setSelectedProduct(product);
+    setCreateModalVisible(true);
+  };
+
+  const resetFields = () => {
+    setProductName('');
+    setAnnualInterestRate('');
+    setMaxMonths('');
+    setSelectedProduct(null);
+  };
 
   return (
     <View style={styles.container}>
@@ -43,12 +57,7 @@ const PaginaProdutos = () => {
           data={products}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedProduct(item);
-                setViewModalVisible(true);
-              }}
-            >
+            <TouchableOpacity onPress={() => handleEditProduct(item)}>
               <Swipeable
                 renderRightActions={() => (
                   <TouchableOpacity
@@ -86,79 +95,16 @@ const PaginaProdutos = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Modal para visualização de produtos */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={viewModalVisible}
-        onRequestClose={() => {
-          setViewModalVisible(false);
-          setSelectedProduct(null);
-        }}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setViewModalVisible(false);
-            setSelectedProduct(null);
-          }}
-        >
-          <View style={styles.viewModalContainer}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={styles.viewModalBody}
-              >
-                <LinearGradient
-                  colors={[COLORS.caixaTurquesa, COLORS.caixaAzul]}
-                  start={{ x: 1, y: 0 }}
-                  end={{ x: 0, y: 0 }}
-                  style={styles.modalTopLine}
-                />
-
-                <View style={styles.modalContent}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => {
-                      setViewModalVisible(false);
-                      setSelectedProduct(null);
-                    }}
-                  >
-                    <Ionicons name="close" size={24} color="#000" />
-                  </TouchableOpacity>
-
-                  {selectedProduct && (
-                    <>
-                      <CaixaText style={styles.modalTitle}>{selectedProduct.name}</CaixaText>
-                      <CaixaText style={styles.inputLabel}>Taxa de juros anual: {selectedProduct.annualInterestRate}%</CaixaText>
-                      <CaixaText style={styles.inputLabel}>Prazo máximo: {selectedProduct.maxMonths} meses</CaixaText>
-                    </>
-                  )}
-                </View>
-
-                <LinearGradient
-                  colors={[COLORS.caixaTurquesa, COLORS.caixaAzul]}
-                  start={{ x: 1, y: 0 }}
-                  end={{ x: 0, y: 0 }}
-                  style={styles.modalTopLine}
-                />
-              </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
       {/* Modal para criação e edição de produtos */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={createModalVisible}
-        onRequestClose={() => {
-          setCreateModalVisible(false);
-        }}
       >
         <TouchableWithoutFeedback
           onPress={() => {
             setCreateModalVisible(false);
+            resetFields();
           }}
         >
           <View style={styles.createModalContainer}>
@@ -184,7 +130,9 @@ const PaginaProdutos = () => {
                     <Ionicons name="close" size={24} color="#000" />
                   </TouchableOpacity>
 
-                  <CaixaText style={styles.modalTitle}>Adicionar novo produto</CaixaText>
+                  <CaixaText style={styles.modalTitle}>
+                    {selectedProduct ? 'Editar produto' : 'Adicionar novo produto'}
+                  </CaixaText>
 
                   <View>
                     <CaixaText style={styles.inputLabel}>Nome do produto</CaixaText>
@@ -260,16 +208,23 @@ const PaginaProdutos = () => {
                     style={[styles.saveButton, isSaveButtonDisabled && { backgroundColor: '#ccc' }]}
                     onPress={() => {
                       if (!isSaveButtonDisabled) {
-                        const newProduct = {
-                          id: (products.length + 1).toString(),
+                        const updatedProduct = {
+                          id: selectedProduct ? selectedProduct.id : (products.length + 1).toString(),
                           name: productName,
                           annualInterestRate: parseFloat(annualInterestRate),
                           maxMonths: parseInt(maxMonths, 10),
                         };
-                        setProducts([...products, newProduct]);
+
+                        if (selectedProduct) {
+                          setProducts(products.map((product) => (product.id === selectedProduct.id ? updatedProduct : product)));
+                        } else {
+                          setProducts([...products, updatedProduct]);
+                        }
+
                         setProductName('');
                         setAnnualInterestRate('');
                         setMaxMonths('');
+                        setSelectedProduct(null);
                         setCreateModalVisible(false);
                       }
                     }}
@@ -432,17 +387,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#d9534f',
     borderRadius: 8,
     padding: 14
-  },
-  viewModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewModalBody: {
-    backgroundColor: '#fff',
-    width: '90%',
-    boxShadow: '0 2px 100px rgba(0, 0, 0, 0.3)',
-    overflow: 'hidden',
   },
   createModalContainer: {
     flex: 1,
