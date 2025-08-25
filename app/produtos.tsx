@@ -105,6 +105,10 @@ const PaginaProdutos = () => {
         visible={createModalVisible}
         onClose={handleCloseModal}
         onSave={saveProduct}
+        onDelete={(productId) => {
+          setProducts(products.filter((product) => product.id !== productId));
+          setSelectedProduct(null);
+        }}
         selectedProduct={selectedProduct}
       />
     </View>
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   deleteButton: {
-    backgroundColor: '#d9534f',
+    backgroundColor: COLORS.vermelho,
     borderRadius: 8,
     padding: 14
   },
