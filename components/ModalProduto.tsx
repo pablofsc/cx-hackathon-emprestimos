@@ -1,16 +1,10 @@
+import { Produto } from '@/services/produtosService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { COLORS } from '../app/constants/colors';
 import CaixaText from './CaixaText';
-
-type Produto = {
-  id: string;
-  name: string;
-  annualInterestRate: number;
-  maxMonths: number;
-};
 
 type ModalProdutoProps = {
   visible: boolean;
@@ -21,9 +15,9 @@ type ModalProdutoProps = {
 };
 
 const ModalProduto: React.FC<ModalProdutoProps> = ({ visible, onClose, onSave, onDelete, selectedProduct }) => {
-  const [productName, setProductName] = useState(selectedProduct?.name || '');
-  const [annualInterestRate, setAnnualInterestRate] = useState(selectedProduct?.annualInterestRate.toString() || '');
-  const [maxMonths, setMaxMonths] = useState(selectedProduct?.maxMonths.toString() || '');
+  const [productName, setProductName] = useState(selectedProduct?.nome || '');
+  const [annualInterestRate, setAnnualInterestRate] = useState(selectedProduct?.jurosAnuais.toString() || '');
+  const [maxMonths, setMaxMonths] = useState(selectedProduct?.maxMeses.toString() || '');
   const [isViewMode, setIsViewMode] = useState(!!selectedProduct);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -33,16 +27,16 @@ const ModalProduto: React.FC<ModalProdutoProps> = ({ visible, onClose, onSave, o
     !maxMonths ||
     (
       !!selectedProduct &&
-      productName === selectedProduct.name &&
-      annualInterestRate === selectedProduct.annualInterestRate.toString() &&
-      maxMonths === selectedProduct.maxMonths.toString()
+      productName === selectedProduct.nome &&
+      annualInterestRate === selectedProduct.jurosAnuais.toString() &&
+      maxMonths === selectedProduct.maxMeses.toString()
     );
 
   useEffect(() => {
     if (selectedProduct) {
-      setProductName(selectedProduct.name);
-      setAnnualInterestRate(selectedProduct.annualInterestRate.toString());
-      setMaxMonths(selectedProduct.maxMonths.toString());
+      setProductName(selectedProduct.nome);
+      setAnnualInterestRate(selectedProduct.jurosAnuais.toString());
+      setMaxMonths(selectedProduct.maxMeses.toString());
       setIsViewMode(true);
     } else {
       resetFields();
@@ -60,9 +54,9 @@ const ModalProduto: React.FC<ModalProdutoProps> = ({ visible, onClose, onSave, o
     if (!isSaveButtonDisabled) {
       const updatedProduct = {
         id: selectedProduct ? selectedProduct.id : Date.now().toString(),
-        name: productName,
-        annualInterestRate: parseFloat(annualInterestRate),
-        maxMonths: parseInt(maxMonths, 10),
+        nome: productName,
+        jurosAnuais: parseFloat(annualInterestRate),
+        maxMeses: parseInt(maxMonths, 10),
       };
       onSave(updatedProduct);
       resetFields();

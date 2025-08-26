@@ -1,3 +1,4 @@
+
 import ModalProduto from '@/components/ModalProduto';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -5,28 +6,21 @@ import React, { useState } from 'react';
 import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import CaixaText from '../components/CaixaText';
+import {
+  addProduto,
+  deleteProduto,
+  getProdutos,
+  Produto,
+  updateProduto
+} from '../services/produtosService';
 import { COLORS } from './constants/colors';
-
-const mockProducts = [
-  { id: '1', name: 'Product 1', annualInterestRate: 5, maxMonths: 12 },
-  { id: '2', name: 'Product 2', annualInterestRate: 10, maxMonths: 24 },
-  { id: '3', name: 'Product 3', annualInterestRate: 15, maxMonths: 36 },
-  { id: '4', name: 'Product 4', annualInterestRate: 20, maxMonths: 48 },
-];
-
-type Product = {
-  id: string;
-  name: string;
-  annualInterestRate: number;
-  maxMonths: number;
-};
 
 const PaginaProdutos = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [products, setProducts] = useState(mockProducts);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Produto[]>(getProdutos());
+  const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);
 
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = (product: Produto) => {
     setSelectedProduct(product);
     setCreateModalVisible(true);
   };
@@ -40,14 +34,19 @@ const PaginaProdutos = () => {
     resetFields();
   };
 
-  const saveProduct = (updatedProduct: Product) => {
+  const saveProduct = (updatedProduct: Produto) => {
     if (selectedProduct) {
-      setProducts(products.map((product) => (product.id === selectedProduct.id ? updatedProduct : product)));
+      updateProduto(updatedProduct);
+    } else {
+      addProduto(updatedProduct);
     }
-    else {
-      setProducts([...products, updatedProduct]);
-    }
+    setProducts(getProdutos());
+    setSelectedProduct(null);
+  };
 
+  const handleDeleteProduct = (productId: string) => {
+    deleteProduto(productId);
+    setProducts(getProdutos());
     setSelectedProduct(null);
   };
 
@@ -68,7 +67,7 @@ const PaginaProdutos = () => {
                 renderRightActions={() => (
                   <TouchableOpacity
                     style={styles.deleteButtonContainer}
-                    onPress={() => setProducts(products.filter((product) => product.id !== item.id))}
+                    onPress={() => handleDeleteProduct(item.id)}
                   >
                     <View style={{ width: 14 }} />
                     <Ionicons name="trash" size={24} color="white" style={styles.deleteButton} />
@@ -77,10 +76,10 @@ const PaginaProdutos = () => {
               >
                 <View style={styles.listItem}>
                   <View style={styles.listItemContent}>
-                    <CaixaText style={styles.listItemText}>{item.name}</CaixaText>
+                    <CaixaText style={styles.listItemText}>{item.nome}</CaixaText>
                     <View style={styles.listItemDetails}>
-                      <CaixaText style={styles.listItemDetailText}>{item.annualInterestRate}%</CaixaText>
-                      <CaixaText style={styles.listItemDetailText}>{item.maxMonths} meses</CaixaText>
+                      <CaixaText style={styles.listItemDetailText}>{item.jurosAnuais}%</CaixaText>
+                      <CaixaText style={styles.listItemDetailText}>{item.maxMeses} meses</CaixaText>
                     </View>
                   </View>
                 </View>
@@ -105,10 +104,7 @@ const PaginaProdutos = () => {
         visible={createModalVisible}
         onClose={handleCloseModal}
         onSave={saveProduct}
-        onDelete={(productId) => {
-          setProducts(products.filter((product) => product.id !== productId));
-          setSelectedProduct(null);
-        }}
+        onDelete={handleDeleteProduct}
         selectedProduct={selectedProduct}
       />
     </View>
