@@ -1,4 +1,5 @@
 
+import ModalConfirmacaoExclusao from '@/components/ModalConfirmacaoExclusao';
 import ModalProduto from '@/components/ModalProduto';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +20,8 @@ const PaginaProdutos = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [products, setProducts] = useState<Produto[]>(getProdutos());
   const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Produto | null>(null);
 
   const handleEditProduct = (product: Produto) => {
     setSelectedProduct(product);
@@ -50,6 +53,24 @@ const PaginaProdutos = () => {
     setSelectedProduct(null);
   };
 
+  const handleSwipeDelete = (product: Produto) => {
+    setProductToDelete(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      handleDeleteProduct(productToDelete.id);
+      setProductToDelete(null);
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const cancelDelete = () => {
+    setProductToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
   return (
     <View style={styles.container}>
       <CaixaText style={styles.description}>
@@ -67,7 +88,7 @@ const PaginaProdutos = () => {
                 renderRightActions={() => (
                   <TouchableOpacity
                     style={styles.deleteButtonContainer}
-                    onPress={() => handleDeleteProduct(item.id)}
+                    onPress={() => handleSwipeDelete(item)}
                   >
                     <View style={{ width: 14 }} />
                     <Ionicons name="trash" size={24} color="white" style={styles.deleteButton} />
@@ -106,6 +127,12 @@ const PaginaProdutos = () => {
         onSave={saveProduct}
         onDelete={handleDeleteProduct}
         selectedProduct={selectedProduct}
+      />
+
+      <ModalConfirmacaoExclusao
+        visible={showDeleteConfirm}
+        onCancel={cancelDelete}
+        onConfirm={confirmDelete}
       />
     </View>
   );

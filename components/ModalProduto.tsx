@@ -5,6 +5,7 @@ import React, { useEffect, useReducer } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { COLORS } from '../app/constants/colors';
 import CaixaText from './CaixaText';
+import ModalConfirmacaoExclusao from './ModalConfirmacaoExclusao';
 
 type ModalProdutoProps = {
   visible: boolean;
@@ -290,47 +291,17 @@ const ModalProduto: React.FC<ModalProdutoProps> = ({
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Modal de confirmação de exclusão */}
-      <Modal
-        animationType="fade"
-        transparent={true}
+      <ModalConfirmacaoExclusao
         visible={state.showDeleteConfirm}
-        onRequestClose={() => dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false })}
-      >
-        <TouchableWithoutFeedback onPress={() => dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false })}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
-            <TouchableWithoutFeedback>
-              <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: 300, alignItems: 'center' }}>
-                <Ionicons name="warning" size={40} color={COLORS.vermelho} style={{ marginBottom: 12 }} />
-                <CaixaText style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>Confirmar exclusão</CaixaText>
-                <CaixaText style={{ fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
-                  Tem certeza que deseja apagar este produto?
-                </CaixaText>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
-                  <TouchableOpacity
-                    style={{ flex: 1, marginRight: 8, backgroundColor: '#eee', borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}
-                    onPress={() => dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false })}
-                  >
-                    <CaixaText style={{ color: '#333', fontSize: 16 }}>Cancelar</CaixaText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={{ flex: 1, marginLeft: 8, backgroundColor: COLORS.vermelho, borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}
-                    onPress={() => {
-                      if (selectedProduct && onDelete) {
-                        onDelete(selectedProduct.id);
-                      }
-                      dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false });
-                      onClose();
-                    }}
-                  >
-                    <CaixaText style={{ color: '#fff', fontSize: 16 }}>Apagar</CaixaText>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        onCancel={() => dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false })}
+        onConfirm={() => {
+          if (selectedProduct && onDelete) {
+            onDelete(selectedProduct.id);
+          }
+          dispatch({ type: 'SET_SHOW_DELETE_CONFIRM', payload: false });
+          onClose();
+        }}
+      />
     </>
   );
 };
