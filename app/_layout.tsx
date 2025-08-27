@@ -41,7 +41,7 @@ export default function RootLayout() {
         }}
       >
         <Tabs.Screen
-          name="produtos"
+          name="index"
           options={{
             title: "Produtos",
             tabBarIcon: ({ color, size }) => (
