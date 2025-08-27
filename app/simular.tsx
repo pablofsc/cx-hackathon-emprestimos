@@ -1,6 +1,5 @@
-
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import WheelPickerExpo from 'react-native-wheel-picker-expo';
@@ -9,39 +8,128 @@ import ModalAmortizacao from '../components/ModalAmortizacao';
 import { getProdutos, Produto } from '../services/produtosService';
 import { COLORS } from './constants/colors';
 
+// State type for the reducer
+interface SimulationState {
+  produtos: Produto[];
+  produtoSelecionado: Produto | null;
+  meses: string;
+  valor: number;
+  modalAmortizacaoVisible: boolean;
+}
+
+// Action types
+type SimulationAction =
+  | { type: 'LOAD_PRODUTOS'; }
+  | { type: 'SELECT_PRODUTO'; payload: string; }
+  | { type: 'SET_MESES'; payload: string; }
+  | { type: 'SET_VALOR'; payload: number; }
+  | { type: 'TOGGLE_MODAL_AMORTIZACAO'; payload?: boolean; }
+  | { type: 'VALIDATE_MESES_FOR_PRODUCT'; };
+
+// Initial state
+const createInitialState = (): SimulationState => {
+  const produtos = getProdutos();
+  return {
+    produtos,
+    produtoSelecionado: produtos[0] || null,
+    meses: '',
+    valor: 0,
+    modalAmortizacaoVisible: false,
+  };
+};
+
+// Reducer function
+function simulationReducer(state: SimulationState, action: SimulationAction): SimulationState {
+  switch (action.type) {
+    case 'LOAD_PRODUTOS': {
+      const produtos = getProdutos();
+      return {
+        ...state,
+        produtos,
+        produtoSelecionado: produtos[0] || null,
+      };
+    }
+
+    case 'SELECT_PRODUTO': {
+      const produto = state.produtos.find(p => p.id === action.payload) || null;
+      let newMeses = state.meses;
+
+      // Validate and adjust meses if it exceeds the new product's limit
+      if (produto && produto.maxMeses) {
+        const currentMesesNum = parseInt(state.meses) || 0;
+        if (currentMesesNum > produto.maxMeses) {
+          newMeses = produto.maxMeses.toString();
+        }
+      }
+
+      return {
+        ...state,
+        produtoSelecionado: produto,
+        meses: newMeses,
+      };
+    }
+
+    case 'SET_MESES': {
+      const num = parseInt(action.payload) || 0;
+      const max = state.produtoSelecionado?.maxMeses || 0;
+
+      const validatedMeses = num > max ? max.toString() : action.payload;
+
+      return {
+        ...state,
+        meses: validatedMeses,
+      };
+    }
+
+    case 'SET_VALOR':
+      return {
+        ...state,
+        valor: action.payload,
+      };
+
+    case 'TOGGLE_MODAL_AMORTIZACAO':
+      return {
+        ...state,
+        modalAmortizacaoVisible: action.payload !== undefined ? action.payload : !state.modalAmortizacaoVisible,
+      };
+
+    case 'VALIDATE_MESES_FOR_PRODUCT': {
+      const currentMesesNum = parseInt(state.meses) || 0;
+      const max = state.produtoSelecionado?.maxMeses || 0;
+
+      if (currentMesesNum > max) {
+        return {
+          ...state,
+          meses: max.toString(),
+        };
+      }
+      return state;
+    }
+
+    default:
+      return state;
+  }
+}
+
 const PaginaSimular = () => {
-  const [produtos] = useState<Produto[]>(getProdutos());
-  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(produtos[0] || null);
-  const [meses, setMeses] = useState('');
-  const [valor, setValor] = useState<number>(0);
-  const [modalAmortizacaoVisible, setModalAmortizacaoVisible] = useState(false);
+  const [state, dispatch] = useReducer(simulationReducer, null, createInitialState);
 
   const handleSelectProduto = (produtoId: string) => {
-    const produto = produtos.find(p => p.id === produtoId) || null;
-    setProdutoSelecionado(produto);
-    const currentMesesNum = parseInt(meses) || 0;
-    if (produto && produto.maxMeses && currentMesesNum > produto.maxMeses) {
-      setMeses(produto.maxMeses.toString());
-    }
+    dispatch({ type: 'SELECT_PRODUTO', payload: produtoId });
   };
 
   const handleChangeMeses = (text: string) => {
-    const num = parseInt(text) || 0;
-    const max = produtoSelecionado?.maxMeses || 0;
-
-    if (num > max) {
-      setMeses(max.toString());
-    } else {
-      setMeses(text);
-    }
+    dispatch({ type: 'SET_MESES', payload: text });
   };
 
-  // Cálculos
-  const jurosAnuais = produtoSelecionado?.jurosAnuais || 0;
-  const mesesNum = parseInt(meses) || 0;
-  const valorNum = valor;
+  // Cálculos (derived state)
+  const jurosAnuais = state.produtoSelecionado?.jurosAnuais || 0;
+  const mesesNum = parseInt(state.meses) || 0;
+  const valorNum = state.valor;
+
   // Taxa efetiva mensal (juros compostos)
   const taxaEfetivaMensal = jurosAnuais > 0 ? (Math.pow(1 + jurosAnuais / 100, 1 / 12) - 1) : 0;
+
   // Valor total e parcela
   let valorTotal = 0;
   let valorParcela = 0;
@@ -50,7 +138,7 @@ const PaginaSimular = () => {
     valorTotal = valorParcela * mesesNum;
   }
 
-  const isDisabled = valor === 0 || meses === '' || parseInt(meses) === 0;
+  const isDisabled = state.valor === 0 || state.meses === '' || parseInt(state.meses) === 0;
 
   // Função para calcular a amortização mês a mês
   const calcularAmortizacao = () => {
@@ -85,7 +173,6 @@ const PaginaSimular = () => {
   const dadosAmortizacao = calcularAmortizacao();
 
   return (
-
     <View style={styles.container}>
       <CaixaText style={styles.description}>
         Selecione o produto, informe o valor desejado e a quantidade de meses para simular o empréstimo.
@@ -95,10 +182,12 @@ const PaginaSimular = () => {
       <View style={styles.cardsGrid}>
         <View style={styles.cardRow}>
           {/* Dados do produto */}
-          {produtoSelecionado && (
+          {state.produtoSelecionado && (
             <View style={styles.card}>
               <CaixaText style={styles.cardTitle}>Informações do Produto</CaixaText>
-              <CaixaText style={styles.cardText}>{produtoSelecionado.jurosAnuais}% a.a. em até {produtoSelecionado.maxMeses} m.</CaixaText>
+              <CaixaText style={styles.cardText}>
+                {state.produtoSelecionado.jurosAnuais}% a.a. em até {state.produtoSelecionado.maxMeses} m.
+              </CaixaText>
             </View>
           )}
           {/* Taxa efetiva mensal */}
@@ -127,7 +216,7 @@ const PaginaSimular = () => {
 
       <TouchableOpacity
         style={{ ...styles.amortizacaoButton, backgroundColor: isDisabled ? '#ccc' : styles.amortizacaoButton.backgroundColor }}
-        onPress={() => setModalAmortizacaoVisible(true)}
+        onPress={() => dispatch({ type: 'TOGGLE_MODAL_AMORTIZACAO', payload: true })}
         disabled={isDisabled}
       >
         <Ionicons name="calculator" size={20} color="#fff" />
@@ -141,8 +230,8 @@ const PaginaSimular = () => {
           <CaixaText style={styles.label}>Valor do empréstimo</CaixaText>
           <View style={styles.inputContainer}>
             <CurrencyInput
-              value={valor}
-              onChangeValue={(value) => setValor(value || 0)}
+              value={state.valor}
+              onChangeValue={(value) => dispatch({ type: 'SET_VALOR', payload: value || 0 })}
               prefix="R$ "
               delimiter="."
               separator=","
@@ -161,11 +250,11 @@ const PaginaSimular = () => {
               style={styles.input}
               placeholder="Meses"
               keyboardType="numeric"
-              value={meses}
+              value={state.meses}
               onChangeText={handleChangeMeses}
-              maxLength={produtoSelecionado ? produtoSelecionado.maxMeses.toString().length : 3}
+              maxLength={state.produtoSelecionado ? state.produtoSelecionado.maxMeses.toString().length : 3}
             />
-            <CaixaText style={styles.maxText}>até {produtoSelecionado?.maxMeses}</CaixaText>
+            <CaixaText style={styles.maxText}>até {state.produtoSelecionado?.maxMeses}</CaixaText>
           </View>
         </View>
       </View>
@@ -174,8 +263,8 @@ const PaginaSimular = () => {
       <View style={styles.pickerContainer}>
         <WheelPickerExpo
           width={'100%'}
-          initialSelectedIndex={produtoSelecionado ? produtos.findIndex(p => p.id === produtoSelecionado.id) : 0}
-          items={produtos.map((produto) => ({ label: produto.nome, value: produto.id }))}
+          initialSelectedIndex={state.produtoSelecionado ? state.produtos.findIndex(p => p.id === state.produtoSelecionado!.id) : 0}
+          items={state.produtos.map((produto) => ({ label: produto.nome, value: produto.id }))}
           onChange={({ item }) => handleSelectProduto(item.value)}
           backgroundColor="#f9f9f9"
           selectedStyle={{ borderColor: COLORS.caixaAzul, borderWidth: 1 }}
@@ -184,8 +273,8 @@ const PaginaSimular = () => {
 
       {/* Modal de Amortização */}
       <ModalAmortizacao
-        visible={modalAmortizacaoVisible}
-        onClose={() => setModalAmortizacaoVisible(false)}
+        visible={state.modalAmortizacaoVisible}
+        onClose={() => dispatch({ type: 'TOGGLE_MODAL_AMORTIZACAO', payload: false })}
         dados={dadosAmortizacao}
         valorParcela={valorParcela}
       />
