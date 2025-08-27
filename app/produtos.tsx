@@ -3,7 +3,7 @@ import ModalConfirmacaoExclusao from '@/components/ModalConfirmacaoExclusao';
 import ModalProduto from '@/components/ModalProduto';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import CaixaText from '../components/CaixaText';
@@ -16,59 +16,159 @@ import {
 } from '../services/produtosService';
 import { COLORS } from './constants/colors';
 
+// Tipos para o estado e ações do reducer
+interface ProdutosState {
+  createModalVisible: boolean;
+  products: Produto[];
+  selectedProduct: Produto | null;
+  showDeleteConfirm: boolean;
+  productToDelete: Produto | null;
+}
+
+type ProdutosAction =
+  | { type: 'SHOW_CREATE_MODAL'; }
+  | { type: 'SHOW_EDIT_MODAL'; payload: Produto; }
+  | { type: 'HIDE_MODAL'; }
+  | { type: 'SHOW_DELETE_CONFIRM'; payload: Produto; }
+  | { type: 'HIDE_DELETE_CONFIRM'; }
+  | { type: 'ADD_PRODUCT'; payload: Produto; }
+  | { type: 'UPDATE_PRODUCT'; payload: Produto; }
+  | { type: 'DELETE_PRODUCT'; payload: string; }
+  | { type: 'REFRESH_PRODUCTS'; }
+  | { type: 'RESET_FIELDS'; };
+
+// Estado inicial
+const initialState: ProdutosState = {
+  createModalVisible: false,
+  products: getProdutos(),
+  selectedProduct: null,
+  showDeleteConfirm: false,
+  productToDelete: null,
+};
+
+// Reducer function
+const produtosReducer = (state: ProdutosState, action: ProdutosAction): ProdutosState => {
+  switch (action.type) {
+    case 'SHOW_CREATE_MODAL':
+      return {
+        ...state,
+        createModalVisible: true,
+        selectedProduct: null,
+      };
+
+    case 'SHOW_EDIT_MODAL':
+      return {
+        ...state,
+        createModalVisible: true,
+        selectedProduct: action.payload,
+      };
+
+    case 'HIDE_MODAL':
+      return {
+        ...state,
+        createModalVisible: false,
+        selectedProduct: null,
+      };
+
+    case 'SHOW_DELETE_CONFIRM':
+      return {
+        ...state,
+        showDeleteConfirm: true,
+        productToDelete: action.payload,
+      };
+
+    case 'HIDE_DELETE_CONFIRM':
+      return {
+        ...state,
+        showDeleteConfirm: false,
+        productToDelete: null,
+      };
+
+    case 'ADD_PRODUCT':
+      addProduto(action.payload);
+      return {
+        ...state,
+        products: getProdutos(),
+        createModalVisible: false,
+        selectedProduct: null,
+      };
+
+    case 'UPDATE_PRODUCT':
+      updateProduto(action.payload);
+      return {
+        ...state,
+        products: getProdutos(),
+        createModalVisible: false,
+        selectedProduct: null,
+      };
+
+    case 'DELETE_PRODUCT':
+      deleteProduto(action.payload);
+      return {
+        ...state,
+        products: getProdutos(),
+        showDeleteConfirm: false,
+        productToDelete: null,
+        selectedProduct: null,
+      };
+
+    case 'REFRESH_PRODUCTS':
+      return {
+        ...state,
+        products: getProdutos(),
+      };
+
+    case 'RESET_FIELDS':
+      return {
+        ...state,
+        selectedProduct: null,
+      };
+
+    default:
+      return state;
+  }
+};
+
 const PaginaProdutos = () => {
-  const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [products, setProducts] = useState<Produto[]>(getProdutos());
-  const [selectedProduct, setSelectedProduct] = useState<Produto | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Produto | null>(null);
+  const [state, dispatch] = useReducer(produtosReducer, initialState);
+  const { createModalVisible, products, selectedProduct, showDeleteConfirm, productToDelete } = state;
 
   const handleEditProduct = (product: Produto) => {
-    setSelectedProduct(product);
-    setCreateModalVisible(true);
+    dispatch({ type: 'SHOW_EDIT_MODAL', payload: product });
   };
 
   const resetFields = () => {
-    setSelectedProduct(null);
+    dispatch({ type: 'RESET_FIELDS' });
   };
 
   const handleCloseModal = () => {
-    setCreateModalVisible(false);
-    resetFields();
+    dispatch({ type: 'HIDE_MODAL' });
   };
 
   const saveProduct = (updatedProduct: Produto) => {
     if (selectedProduct) {
-      updateProduto(updatedProduct);
+      dispatch({ type: 'UPDATE_PRODUCT', payload: updatedProduct });
     } else {
-      addProduto(updatedProduct);
+      dispatch({ type: 'ADD_PRODUCT', payload: updatedProduct });
     }
-    setProducts(getProdutos());
-    setSelectedProduct(null);
   };
 
   const handleDeleteProduct = (productId: string) => {
-    deleteProduto(productId);
-    setProducts(getProdutos());
-    setSelectedProduct(null);
+    dispatch({ type: 'DELETE_PRODUCT', payload: productId });
   };
 
   const handleSwipeDelete = (product: Produto) => {
-    setProductToDelete(product);
-    setShowDeleteConfirm(true);
+    dispatch({ type: 'SHOW_DELETE_CONFIRM', payload: product });
   };
 
   const confirmDelete = () => {
     if (productToDelete) {
-      handleDeleteProduct(productToDelete.id);
-      setProductToDelete(null);
+      dispatch({ type: 'DELETE_PRODUCT', payload: productToDelete.id });
     }
-    setShowDeleteConfirm(false);
   };
 
   const cancelDelete = () => {
-    setProductToDelete(null);
-    setShowDeleteConfirm(false);
+    dispatch({ type: 'HIDE_DELETE_CONFIRM' });
   };
 
   return (
@@ -110,7 +210,7 @@ const PaginaProdutos = () => {
         />
       </GestureHandlerRootView>
 
-      <TouchableOpacity style={styles.fab} onPress={() => setCreateModalVisible(true)}>
+      <TouchableOpacity style={styles.fab} onPress={() => dispatch({ type: 'SHOW_CREATE_MODAL' })}>
         <LinearGradient
           colors={[COLORS.caixaTurquesa, COLORS.caixaAzul]}
           start={{ x: 0, y: 0 }}
