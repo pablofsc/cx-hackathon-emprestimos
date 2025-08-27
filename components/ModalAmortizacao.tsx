@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.caixaAzul,
     paddingVertical: 10,
     paddingHorizontal: 5,
-    marginBottom: 10,
   },
   tableHeaderCell: {
     flex: 1,
