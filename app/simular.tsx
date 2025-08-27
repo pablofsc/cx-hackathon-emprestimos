@@ -201,7 +201,7 @@ const PaginaSimular = () => {
           <View style={[styles.card, isDisabled && styles.disabledCard]}>
             <CaixaText style={styles.cardTitle}>Valor total com juros</CaixaText>
             <CaixaText style={styles.cardText}>
-              {valorTotal > 0 ? `R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}
+              {valorTotal > 0 ? `R$ ${valorTotal.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}` : '--'}
             </CaixaText>
           </View>
           {/* Valor da parcela mensal */}
