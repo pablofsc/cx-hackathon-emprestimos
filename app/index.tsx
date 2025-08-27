@@ -8,12 +8,12 @@ import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import CaixaText from '../components/CaixaText';
 import {
-  addProduto,
-  deleteProduto,
-  getProdutos,
-  Produto,
-  updateProduto
-} from '../services/produtosService';
+  DELETEprodutos,
+  GETprodutos,
+  PATCHprodutos,
+  POSTprodutos,
+  Produto
+} from '../services/apiServiceMock';
 import { COLORS } from './constants/colors';
 
 // Tipos para o estado e ações do reducer
@@ -40,7 +40,7 @@ type ProdutosAction =
 // Estado inicial
 const initialState: ProdutosState = {
   createModalVisible: false,
-  products: getProdutos(),
+  products: GETprodutos(),
   selectedProduct: null,
   showDeleteConfirm: false,
   productToDelete: null,
@@ -85,28 +85,28 @@ const produtosReducer = (state: ProdutosState, action: ProdutosAction): Produtos
       };
 
     case 'ADD_PRODUCT':
-      addProduto(action.payload);
+      POSTprodutos(action.payload);
       return {
         ...state,
-        products: getProdutos(),
+        products: GETprodutos(),
         createModalVisible: false,
         selectedProduct: null,
       };
 
     case 'UPDATE_PRODUCT':
-      updateProduto(action.payload);
+      PATCHprodutos(action.payload);
       return {
         ...state,
-        products: getProdutos(),
+        products: GETprodutos(),
         createModalVisible: false,
         selectedProduct: null,
       };
 
     case 'DELETE_PRODUCT':
-      deleteProduto(action.payload);
+      DELETEprodutos(action.payload);
       return {
         ...state,
-        products: getProdutos(),
+        products: GETprodutos(),
         showDeleteConfirm: false,
         productToDelete: null,
         selectedProduct: null,
@@ -115,7 +115,7 @@ const produtosReducer = (state: ProdutosState, action: ProdutosAction): Produtos
     case 'REFRESH_PRODUCTS':
       return {
         ...state,
-        products: getProdutos(),
+        products: GETprodutos(),
       };
 
     case 'RESET_FIELDS':

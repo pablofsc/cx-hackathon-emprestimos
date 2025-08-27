@@ -5,7 +5,7 @@ import CurrencyInput from 'react-native-currency-input';
 import WheelPickerExpo from 'react-native-wheel-picker-expo';
 import CaixaText from '../components/CaixaText';
 import ModalAmortizacao from '../components/ModalAmortizacao';
-import { getProdutos, Produto } from '../services/produtosService';
+import { GETprodutos, POSTsimulacoes, Produto } from '../services/apiServiceMock';
 import { COLORS } from './constants/colors';
 
 // State type for the reducer
@@ -24,11 +24,11 @@ type SimulationAction =
   | { type: 'SET_MESES'; payload: string; }
   | { type: 'SET_VALOR'; payload: number; }
   | { type: 'TOGGLE_MODAL_AMORTIZACAO'; payload?: boolean; }
-  | { type: 'VALIDATE_MESES_FOR_PRODUCT'; };
+  | { type: 'VALIDATE_MESES_FOR_PRODUCT'; }
 
 // Initial state
 const createInitialState = (): SimulationState => {
-  const produtos = getProdutos();
+  const produtos = GETprodutos();
   return {
     produtos,
     produtoSelecionado: produtos[0] || null,
@@ -42,7 +42,8 @@ const createInitialState = (): SimulationState => {
 function simulationReducer(state: SimulationState, action: SimulationAction): SimulationState {
   switch (action.type) {
     case 'LOAD_PRODUTOS': {
-      const produtos = getProdutos();
+      const produtos = GETprodutos();
+
       return {
         ...state,
         produtos,
@@ -142,32 +143,7 @@ const PaginaSimular = () => {
 
   // Função para calcular a amortização mês a mês
   const calcularAmortizacao = () => {
-    if (valorNum <= 0 || mesesNum <= 0 || taxaEfetivaMensal <= 0) {
-      return [];
-    }
-
-    const amortizacaoDados = [];
-    let saldoAtual = valorNum;
-
-    for (let mes = 1; mes <= mesesNum; mes++) {
-      const jurosMes = saldoAtual * taxaEfetivaMensal;
-      const amortizacaoMes = valorParcela - jurosMes;
-      saldoAtual = saldoAtual - amortizacaoMes;
-
-      // Garantir que o saldo não fique negativo no último mês devido a arredondamentos
-      if (mes === mesesNum && saldoAtual < 0) {
-        saldoAtual = 0;
-      }
-
-      amortizacaoDados.push({
-        mes,
-        juros: jurosMes,
-        amortizacao: amortizacaoMes,
-        saldo: saldoAtual
-      });
-    }
-
-    return amortizacaoDados;
+    return POSTsimulacoes(valorNum, mesesNum, taxaEfetivaMensal, valorParcela);
   };
 
   const dadosAmortizacao = calcularAmortizacao();

@@ -1,4 +1,4 @@
-import { Produto } from '@/services/produtosService';
+import { Produto } from '@/services/apiServiceMock';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useReducer } from 'react';
