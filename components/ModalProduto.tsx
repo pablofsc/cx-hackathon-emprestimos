@@ -266,6 +266,7 @@ const styles = StyleSheet.create({
   createModalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   createModalBody: {
     backgroundColor: '#fff',
