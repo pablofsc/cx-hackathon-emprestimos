@@ -169,7 +169,7 @@ const ModalProduto: React.FC<ModalProdutoProps> = ({
                 />
 
                 <View style={styles.modalContent}>
-                  <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                  <TouchableOpacity style={styles.closeButton} onPress={onClose} testID="close-modal-button">
                     <Ionicons name="close" size={24} color="#000" />
                   </TouchableOpacity>
 

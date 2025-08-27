@@ -36,7 +36,7 @@ const ModalAmortizacao: React.FC<ModalAmortizacaoProps> = ({ visible, onClose, d
         />
 
         <View style={styles.scrollContent}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button">
             <Ionicons name="close" size={24} color="#000" />
           </TouchableOpacity>
 
